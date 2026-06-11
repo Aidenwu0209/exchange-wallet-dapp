@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String           @id @map("user_id")
+  username         String           @unique
+  walletAddress    String           @unique @map("wallet_address")
+  userIdHash       String           @unique @map("user_id_hash")
+  availableBalance String           @default("0") @map("available_balance")
+  frozenBalance    String           @default("0") @map("frozen_balance")
+  totalDeposit     String           @default("0") @map("total_deposit")
+  totalWithdrawal  String           @default("0") @map("total_withdrawal")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+  depositAddresses DepositAddress[]
+  deposits         Deposit[]
+  ledgerEntries    LedgerEntry[]
+  withdrawals      Withdrawal[]
+
+  @@map("users")
+}
+
+model DepositAddress {
+  id            String   @id
+  userId        String   @map("user_id")
+  chainId       Int      @map("chain_id")
+  assetSymbol   String   @default("MockUSDT") @map("asset_symbol")
+  address       String   @unique
+  createdTxHash String?  @map("created_tx_hash")
+  createdAt     DateTime @default(now()) @map("created_at")
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("deposit_addresses")
+}
+
+model Deposit {
+  id              String   @id @map("deposit_id")
+  userId          String   @map("user_id")
+  chainId         Int      @map("chain_id")
+  fromAddress     String   @map("from_address")
+  depositAddress  String   @map("deposit_address")
+  amount          String
+  txHash          String   @map("tx_hash")
+  logIndex        Int      @map("log_index")
+  detectedBlock   Int      @map("detected_block")
+  confirmedBlock  Int?     @map("confirmed_block")
+  confirmations   Int      @default(0)
+  status          String
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@unique([chainId, txHash, logIndex])
+  @@map("deposits")
+}
+
+model LedgerEntry {
+  id             String   @id @map("ledger_entry_id")
+  userId         String   @map("user_id")
+  direction      String
+  businessType   String   @map("business_type")
+  businessId     String   @map("business_id")
+  assetSymbol    String   @default("MockUSDT") @map("asset_symbol")
+  amount         String
+  availableAfter String   @map("available_after")
+  frozenAfter    String   @map("frozen_after")
+  txHash         String?  @map("tx_hash")
+  logIndex       Int?     @map("log_index")
+  blockNumber    Int?     @map("block_number")
+  createdAt      DateTime @default(now()) @map("created_at")
+  user           User     @relation(fields: [userId], references: [id])
+
+  @@map("ledger_entries")
+}
+
+model Withdrawal {
+  id                String   @id @map("withdrawal_id")
+  userId            String   @map("user_id")
+  toAddress         String   @map("to_address")
+  amount            String
+  assetSymbol       String   @default("MockUSDT") @map("asset_symbol")
+  status            String
+  riskLevel         String   @map("risk_level")
+  riskReason        String?  @map("risk_reason")
+  txHash            String?  @map("tx_hash")
+  multisigRequestId String?  @map("multisig_request_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("withdrawals")
+}
+
+model RiskEvent {
+  id           String   @id @map("risk_event_id")
+  userId       String?  @map("user_id")
+  withdrawalId String?  @map("withdrawal_id")
+  address      String?
+  riskLevel    String   @map("risk_level")
+  code         String
+  message      String
+  detailsJson  String   @default("{}") @map("details_json")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("risk_events")
+}
+
+model BlacklistAddress {
+  id        String   @id
+  address   String   @unique
+  reason    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("blacklist_addresses")
+}
+
+model BlockScanState {
+  chainId               Int      @id @map("chain_id")
+  lastScannedBlock      Int      @default(0) @map("last_scanned_block")
+  lastScannedBlockHash  String?  @map("last_scanned_block_hash")
+  requiredConfirmations Int      @default(2) @map("required_confirmations")
+  scannerStatus         String   @default("idle") @map("scanner_status")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("block_scan_state")
+}
+
+model ReconciliationReport {
+  id                   String   @id @map("report_id")
+  totalUserBalance     String   @map("total_user_balance")
+  totalFrozenBalance   String   @map("total_frozen_balance")
+  hotWalletBalance     String   @map("hot_wallet_balance")
+  coldWalletBalance    String   @map("cold_wallet_balance")
+  depositWalletBalance String   @map("deposit_wallet_balance")
+  totalOnchainBalance  String   @map("total_onchain_balance")
+  diff                 String
+  reserveRatio         String   @map("reserve_ratio")
+  merkleRoot           String   @map("merkle_root")
+  snapshotHash         String   @unique @map("snapshot_hash")
+  anchorTxHash         String?  @map("anchor_tx_hash")
+  status               String
+  proofJson            String   @default("[]") @map("proof_json")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@map("reconciliation_reports")
+}
+
+model MultisigApproval {
+  id                String   @id
+  withdrawalId      String   @map("withdrawal_id")
+  multisigRequestId String   @map("multisig_request_id")
+  approverAddress   String   @map("approver_address")
+  txHash            String?  @map("tx_hash")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@unique([withdrawalId, approverAddress])
+  @@map("multisig_approvals")
+}
+
+model OnchainEvent {
+  id              String   @id
+  eventType       String   @map("event_type")
+  contractAddress String   @map("contract_address")
+  txHash          String   @map("tx_hash")
+  blockNumber     Int      @map("block_number")
+  logIndex        Int      @map("log_index")
+  argsJson        String   @map("args_json")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([txHash, logIndex, eventType])
+  @@map("onchain_events")
+}
