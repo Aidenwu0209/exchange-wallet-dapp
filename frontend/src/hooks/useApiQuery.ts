@@ -2,12 +2,23 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-export function useApiQuery<T>(loader: () => Promise<T>, deps: unknown[] = []) {
+type UseApiQueryOptions = {
+  enabled?: boolean;
+};
+
+export function useApiQuery<T>(loader: () => Promise<T>, deps: unknown[] = [], options: UseApiQueryOptions = {}) {
+  const enabled = options.enabled ?? true;
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   const reload = useCallback(async () => {
+    if (!enabled) {
+      setData(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -17,7 +28,7 @@ export function useApiQuery<T>(loader: () => Promise<T>, deps: unknown[] = []) {
     } finally {
       setLoading(false);
     }
-  }, deps);
+  }, [enabled, ...deps]);
 
   useEffect(() => {
     reload();

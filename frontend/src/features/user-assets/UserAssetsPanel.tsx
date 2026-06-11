@@ -20,8 +20,8 @@ export function UserAssetsPanel() {
   const { userId, setUserId, hasUser } = useActiveUser();
   const [username, setUsername] = useState("alice");
   const createMutation = useApiMutation(createUser);
-  const assets = useApiQuery(() => getUserAssets(userId), [userId]);
-  const address = useApiQuery(() => getDepositAddress(userId), [userId]);
+  const assets = useApiQuery(() => getUserAssets(userId), [userId], { enabled: hasUser });
+  const address = useApiQuery(() => getDepositAddress(userId), [userId], { enabled: hasUser });
 
   useEffect(() => {
     if (createMutation.data?.user_id) {
@@ -40,7 +40,7 @@ export function UserAssetsPanel() {
         title="用户资产"
         subtitle="用户余额只从后端本地账本读取，充值确认和提现扣减都会写入 ledger_entries。"
         actions={
-          <Button variant="secondary" icon={<RefreshCcw size={16} />} onClick={() => assets.reload()}>
+          <Button variant="secondary" icon={<RefreshCcw size={16} />} disabled={!hasUser} onClick={() => assets.reload()}>
             刷新资产
           </Button>
         }

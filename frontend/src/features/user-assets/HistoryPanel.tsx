@@ -14,8 +14,8 @@ import { formatAtomic } from "@/src/utils/format";
 
 export function HistoryPanel() {
   const { userId, hasUser } = useActiveUser();
-  const deposits = useApiQuery(() => getDepositHistory(userId), [userId]);
-  const withdrawals = useApiQuery(() => getWithdrawalHistory(userId), [userId]);
+  const deposits = useApiQuery(() => getDepositHistory(userId), [userId], { enabled: hasUser });
+  const withdrawals = useApiQuery(() => getWithdrawalHistory(userId), [userId], { enabled: hasUser });
 
   return (
     <section className="page">
@@ -26,6 +26,7 @@ export function HistoryPanel() {
           <Button
             variant="secondary"
             icon={<RefreshCcw size={16} />}
+            disabled={!hasUser}
             onClick={() => {
               deposits.reload();
               withdrawals.reload();

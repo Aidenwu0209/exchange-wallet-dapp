@@ -21,13 +21,14 @@ export function DepositPanel() {
   const { userId, hasUser } = useActiveUser();
   const wallet = useWalletStatus();
   const [faucetAmount, setFaucetAmount] = useState("1000000000000000000000");
-  const address = useApiQuery(() => getDepositAddress(userId), [userId]);
-  const history = useApiQuery(() => getDepositHistory(userId), [userId]);
+  const address = useApiQuery(() => getDepositAddress(userId), [userId], { enabled: hasUser });
+  const history = useApiQuery(() => getDepositHistory(userId), [userId], { enabled: hasUser });
   const faucet = useApiMutation(faucetMockUsdt);
   const scan = useApiMutation(scanDeposits);
   const confirm = useApiMutation(confirmDeposits);
 
   async function refreshHistory() {
+    if (!hasUser) return;
     await history.reload();
   }
 

@@ -11,7 +11,7 @@ import { getProofOfReserve } from "@/src/services/wallet-api";
 
 export function ProofOfReservePanel() {
   const { userId, hasUser } = useActiveUser();
-  const proof = useApiQuery(() => getProofOfReserve(userId), [userId]);
+  const proof = useApiQuery(() => getProofOfReserve(userId), [userId], { enabled: hasUser });
 
   return (
     <section className="page">
@@ -19,7 +19,7 @@ export function ProofOfReservePanel() {
         title="Proof of Reserve 查询"
         subtitle="用户可以查询自己的叶子节点、Merkle Proof、Merkle Root 和 snapshotHash。"
         actions={
-          <Button variant="secondary" icon={<ShieldCheck size={16} />} onClick={() => proof.reload()}>
+          <Button variant="secondary" icon={<ShieldCheck size={16} />} disabled={!hasUser} onClick={() => proof.reload()}>
             验证证明
           </Button>
         }
