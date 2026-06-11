@@ -104,7 +104,10 @@ export async function txMeta(receipt: ContractTransactionReceipt | TransactionRe
 export function parseKnownLog(log: Log) {
   for (const iface of Object.values(interfaces)) {
     try {
-      return iface.parseLog({ topics: [...log.topics], data: log.data });
+      const parsed = iface.parseLog({ topics: [...log.topics], data: log.data });
+      if (parsed) {
+        return parsed;
+      }
     } catch {
       // Try the next contract interface.
     }

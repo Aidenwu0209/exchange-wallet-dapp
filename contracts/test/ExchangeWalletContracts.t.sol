@@ -39,7 +39,7 @@ contract ExchangeWalletContractsTest is Test {
         vm.prank(owner);
         token.mint(address(this), 100 ether);
 
-        token.transfer(userRecipient, 25 ether);
+        assertTrue(token.transfer(userRecipient, 25 ether));
         assertEq(token.balanceOf(userRecipient), 25 ether);
         assertEq(token.balanceOf(address(this)), 75 ether);
     }

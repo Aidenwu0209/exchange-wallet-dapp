@@ -10,6 +10,7 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "db:push": "prisma db push",
+    "db:init:sql": "sqlite3 prisma/dev.db < prisma/init.sql && prisma generate",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

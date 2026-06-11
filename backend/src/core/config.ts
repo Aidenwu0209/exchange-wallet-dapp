@@ -31,7 +31,7 @@ function readDeployment(): DeploymentFile {
 const deployment = readDeployment();
 
 function envAddress(name: string, fallback?: string): string {
-  const value = process.env[name] ?? fallback;
+  const value = process.env[name]?.trim() || fallback;
   if (!value) {
     return "";
   }
