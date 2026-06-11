@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, PlugZap } from "lucide-react";
+import { LogOut, Network, PlugZap } from "lucide-react";
 import { Button } from "@/src/components/ui/Button";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { AddressText } from "@/src/components/ui/AddressText";
@@ -14,6 +14,11 @@ export function WalletStatus() {
       <StatusBadge value={wallet.isAdmin ? "ADMIN" : "USER"} />
       <StatusBadge value={wallet.isMultisigApprover ? "MULTISIG" : "NO_MULTISIG"} />
       {wallet.address ? <AddressText address={wallet.address} /> : null}
+      {wallet.isConnected && !wallet.isLocalAnvil ? (
+        <Button variant="secondary" icon={<Network size={16} />} onClick={() => wallet.switchToAnvil()} disabled={wallet.networkActionPending}>
+          切换到 Anvil
+        </Button>
+      ) : null}
       {wallet.isConnected ? (
         <Button variant="secondary" icon={<LogOut size={16} />} onClick={() => wallet.disconnect()}>
           断开
@@ -23,6 +28,7 @@ export function WalletStatus() {
           连接 MetaMask
         </Button>
       )}
+      {wallet.walletError ? <StatusBadge value={wallet.walletError} tone="danger" /> : null}
     </div>
   );
 }

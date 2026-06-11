@@ -1,5 +1,5 @@
 import { statusTone } from "@/src/utils/format";
 
-export function StatusBadge({ value }: { value?: string | null }) {
-  return <span className={`badge ${statusTone(value)}`}>{value ?? "-"}</span>;
+export function StatusBadge({ value, tone }: { value?: string | null; tone?: "success" | "warning" | "danger" | "info" }) {
+  return <span className={`badge ${tone ?? statusTone(value)}`}>{value ?? "-"}</span>;
 }

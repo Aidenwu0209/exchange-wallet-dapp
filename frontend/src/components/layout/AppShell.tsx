@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -13,6 +14,7 @@ import {
   Landmark,
   ShieldAlert,
   Signature,
+  Users,
   WalletCards
 } from "lucide-react";
 import { WalletStatus } from "@/src/features/wallet-connect/WalletStatus";
@@ -35,31 +37,37 @@ const adminNav = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isAdminRoute = pathname.startsWith("/admin");
+  const activeNav = isAdminRoute ? adminNav : userNav;
+  const modeLabel = isAdminRoute ? "管理员端" : "用户端";
+  const switchHref = isAdminRoute ? "/user/assets" : "/admin/dashboard";
+  const switchLabel = isAdminRoute ? "返回用户端" : "进入管理员端";
+  const SwitchIcon = isAdminRoute ? WalletCards : Users;
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">EW</div>
-          <div className="brand-title">选题二：交易所钱包系统 DApp 开发</div>
+          <div>
+            <div className="brand-title">交易所钱包系统</div>
+            <div className="brand-subtitle">Exchange Wallet DApp</div>
+          </div>
         </div>
         <nav className="nav-group">
-          <div className="nav-label">用户端</div>
-          {userNav.map((item) => (
-            <Link className="nav-link" href={item.href} key={item.href}>
+          <div className="nav-label">{modeLabel}</div>
+          {activeNav.map((item) => (
+            <Link className={`nav-link ${pathname === item.href ? "active" : ""}`} href={item.href} key={item.href}>
               <item.icon size={17} />
               {item.label}
             </Link>
           ))}
         </nav>
-        <nav className="nav-group">
-          <div className="nav-label">管理员端</div>
-          {adminNav.map((item) => (
-            <Link className="nav-link" href={item.href} key={item.href}>
-              <item.icon size={17} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <Link className="nav-link mode-switch" href={switchHref}>
+          <SwitchIcon size={17} />
+          {switchLabel}
+        </Link>
       </aside>
       <main className="main">
         <header className="topbar">
