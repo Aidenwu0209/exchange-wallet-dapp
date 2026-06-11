@@ -46,7 +46,39 @@
 | 对账上链 | 通过，生成 Merkle Root、snapshotHash 和 AuditAnchor txHash |
 | Proof of Reserve | 通过，用户 PoR 返回 `verified=true` |
 | 链上数据中心 | 通过，包含 `DEPOSIT_WALLET_CREATED`、`SWEPT`、`WITHDRAWAL_SUBMITTED`、`WITHDRAWAL_APPROVED`、`WITHDRAWAL_EXECUTED`、`AUDIT_ANCHORED` |
-| Chrome/MetaMask 连接 | Chrome 中前端 `连接 MetaMask` 按钮可唤起 MetaMask；当前 MetaMask 停在 unlock 页，需人工解锁后完成最终连接确认 |
+| Chrome/MetaMask 连接 | Chrome 中前端 `连接 MetaMask` 按钮可唤起 MetaMask；当前 MetaMask 停在 `home.html#/onboarding/completion`，DApp 侧 `window.ethereum=false`，需人工点完 MetaMask `完成/Done` 后再执行最终连接确认 |
+
+## 2026-06-11 最新完整 API 烟测记录
+
+执行时间：2026-06-11 20:19 CST
+
+本轮在当前 Anvil 链重新确认合约代码存在，后端 `GET /api/v1/health` 返回 `contracts_loaded=true`，随后通过本地 API 和 Anvil 测试账户完成端到端烟测。烟测过程中不输出、不提交任何私钥。
+
+```json
+{
+  "ok": true,
+  "user_id": "u_f14947872fda4142",
+  "deposit_address": "0x033054AE8080AA43e2197C200FCf6c5733407dF2",
+  "user_wallet": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+  "results": [
+    ["reset", "ok"],
+    ["health", "block 20"],
+    ["create_user", "u_f14947872fda4142 0x033054AE8080AA43e2197C200FCf6c5733407dF2"],
+    ["deposit_confirmed", "1500000000000000000000"],
+    ["sweep", "0x69f66f3a4e9ec50226cb0809c905104a8b77358246d320260b702e922154e187"],
+    ["large_withdrawal", "wd_a7623b8c8dea40ed request 1"],
+    ["multisig_eip712_execute", "0x479656af473769b464ea6915d7f0aaaf44f739747abcc1542eb63a2281bad6a0"],
+    ["normal_withdrawal", "0x5a0e6db61bf6ff3e6f81dfe6ecfdabeac8d01749fefbd78756f65ccc3ac90f1d"],
+    ["blacklist_blocked", "BLACKLISTED_ADDRESS"],
+    ["insufficient_rejected", "INSUFFICIENT_BALANCE"],
+    ["reconciliation", "MISMATCHED 0x0ba8e1d21d2fb156eeb6f70cd406e4de6351aed6ba3c2e1cf32a3057b1f0c6a8"],
+    ["proof_of_reserve", "true 0x67e235559a045634207c3ccf532ea9c423efc7288cc49f5b3b3552cc6213da3c"],
+    ["onchain_events", "13"]
+  ]
+}
+```
+
+说明：本轮对账状态为 `MISMATCHED`，原因是本地演示链初始热/冷钱包储备远大于用户负债；本轮仍成功生成 `snapshotHash`、`merkleRoot`，并写入 AuditAnchor，用户 Proof of Reserve 返回 `verified=true`。
 
 本轮新增 EIP-712 smoke 结果：
 
