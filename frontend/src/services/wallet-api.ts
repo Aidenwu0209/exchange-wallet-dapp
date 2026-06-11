@@ -3,6 +3,7 @@ import type {
   Dashboard,
   DepositAddress,
   DepositHistoryItem,
+  MultisigApprovalTypedDataResponse,
   PageResult,
   ReconciliationReport,
   UserAssets,
@@ -77,10 +78,25 @@ export function getPendingWithdrawals() {
   return apiClient.get<PageResult<WithdrawalItem>>("/api/v1/admin/pending-withdrawals?page=1&page_size=20");
 }
 
-export function approveWithdrawal(withdrawalId: string, approverAddress: string) {
-  return apiClient.post<{ withdrawal_id: string; multisig_request_id: string; approved_count: number; threshold: number; can_execute: boolean }>(
+export function getApprovalTypedData(withdrawalId: string, approverAddress: string) {
+  const encodedAddress = encodeURIComponent(approverAddress);
+  return apiClient.get<MultisigApprovalTypedDataResponse>(
+    `/api/v1/admin/withdrawals/${withdrawalId}/approval-typed-data?approver_address=${encodedAddress}`
+  );
+}
+
+export function approveWithdrawal(withdrawalId: string, approverAddress: string, signature?: string, deadline?: string) {
+  return apiClient.post<{
+    withdrawal_id: string;
+    multisig_request_id: string;
+    approved_count: number;
+    threshold: number;
+    can_execute: boolean;
+    approval_tx_hash: string;
+    eip712_verified: boolean;
+  }>(
     `/api/v1/admin/withdrawals/${withdrawalId}/approve`,
-    { approver_address: approverAddress }
+    { approver_address: approverAddress, signature, deadline }
   );
 }
 

@@ -1,7 +1,14 @@
 import { Router } from "express";
 import { ok } from "../core/response.js";
 import { paginationSchema } from "../schemas/common.schema.js";
-import { approveWithdrawalSchema, blacklistSchema, onchainEventsQuerySchema, sweepSchema } from "../schemas/admin.schema.js";
+import {
+  approvalTypedDataQuerySchema,
+  approveWithdrawalSchema,
+  blacklistSchema,
+  executeWithdrawalSchema,
+  onchainEventsQuerySchema,
+  sweepSchema
+} from "../schemas/admin.schema.js";
 import { withdrawalIdParamsSchema } from "../schemas/withdrawal.schema.js";
 import { AdminService } from "../services/admin.service.js";
 import { MultisigService } from "../services/multisig.service.js";
@@ -39,12 +46,21 @@ adminRoutes.get(
   })
 );
 
+adminRoutes.get(
+  "/admin/withdrawals/:withdrawal_id/approval-typed-data",
+  asyncRoute(async (req, res) => {
+    const params = withdrawalIdParamsSchema.parse(req.params);
+    const input = approvalTypedDataQuerySchema.parse(req.query);
+    ok(req, res, await multisig.approvalTypedData(params.withdrawal_id, input.approver_address));
+  })
+);
+
 adminRoutes.post(
   "/admin/withdrawals/:withdrawal_id/approve",
   asyncRoute(async (req, res) => {
     const params = withdrawalIdParamsSchema.parse(req.params);
     const input = approveWithdrawalSchema.parse(req.body);
-    ok(req, res, await multisig.approve(params.withdrawal_id, input.approver_address));
+    ok(req, res, await multisig.approve(params.withdrawal_id, input.approver_address, input.signature, input.deadline));
   })
 );
 
@@ -52,7 +68,7 @@ adminRoutes.post(
   "/admin/withdrawals/:withdrawal_id/execute",
   asyncRoute(async (req, res) => {
     const params = withdrawalIdParamsSchema.parse(req.params);
-    const input = approveWithdrawalSchema.partial().parse(req.body ?? {});
+    const input = executeWithdrawalSchema.parse(req.body ?? {});
     ok(req, res, await multisig.execute(params.withdrawal_id, input.approver_address));
   })
 );

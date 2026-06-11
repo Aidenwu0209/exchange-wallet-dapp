@@ -1,6 +1,6 @@
 import { Contract } from "ethers";
 import { config } from "../core/config.js";
-import { contractsReadOnly, erc20Abi, provider } from "../core/contracts.js";
+import { contractsReadOnly, erc20Abi, freshBlockNumber } from "../core/contracts.js";
 import { prisma } from "../core/prisma.js";
 import { RiskRepository } from "../repositories/risk.repository.js";
 import { ScanStateRepository } from "../repositories/scan-state.repository.js";
@@ -84,7 +84,7 @@ export class AdminService {
     return {
       chain_id: state.chainId,
       last_scanned_block: state.lastScannedBlock,
-      latest_block: await provider.getBlockNumber(),
+      latest_block: await freshBlockNumber(),
       required_confirmations: state.requiredConfirmations,
       scanner_status: state.scannerStatus
     };
@@ -101,7 +101,8 @@ export class AdminService {
       prisma.deposit.deleteMany(),
       prisma.depositAddress.deleteMany(),
       prisma.user.deleteMany(),
-      prisma.blacklistAddress.deleteMany()
+      prisma.blacklistAddress.deleteMany(),
+      prisma.blockScanState.deleteMany()
     ]);
     return { reset: true };
   }

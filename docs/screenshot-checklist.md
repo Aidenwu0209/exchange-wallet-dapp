@@ -23,11 +23,12 @@
 17. 黑名单页面新增黑名单地址。
 18. 向黑名单地址提现被风控拦截，显示错误或 `RISK_REJECTED`。
 19. 大额提现进入 `PENDING_MULTISIG`。
-20. 多签页面管理员 1 审批成功。
-21. 多签页面管理员 2 审批后达到阈值。
-22. 多签执行成功，显示提现 txHash。
-23. 资产对账页面生成报告，显示本地负债、链上储备、diff、reserve ratio。
-24. AuditAnchor 上链成功，显示 snapshotHash、merkleRoot、anchor txHash。
-25. 用户 Proof of Reserve 页面显示 leaf、proof、root、verified。
-26. 链上数据中心显示 `TRANSFER`、`SWEPT`、`WITHDRAWAL_APPROVED`、`AUDIT_ANCHORED` 等事件。
-27. `npm run check` 或分模块 build/test 命令成功截图。
+20. 多签页面 MetaMask EIP-712 签名弹窗。
+21. 多签页面管理员 1 签名审批成功。
+22. 多签页面管理员 2 签名审批后达到阈值。
+23. 多签执行成功，显示提现 txHash。
+24. 资产对账页面生成报告，显示本地负债、链上储备、diff、reserve ratio。
+25. AuditAnchor 上链成功，显示 snapshotHash、merkleRoot、anchor txHash。
+26. 用户 Proof of Reserve 页面显示 leaf、proof、root、verified。
+27. 链上数据中心显示 `TRANSFER`、`SWEPT`、`WITHDRAWAL_APPROVED`、`AUDIT_ANCHORED` 等事件。
+28. `npm run check` 或分模块 build/test 命令成功截图。

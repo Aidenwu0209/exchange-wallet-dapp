@@ -1,4 +1,4 @@
-import { provider, contractsReadOnly } from "../core/contracts.js";
+import { contractsReadOnly, freshBlockNumber, provider } from "../core/contracts.js";
 import { prisma } from "../core/prisma.js";
 import { config } from "../core/config.js";
 
@@ -9,7 +9,7 @@ export class HealthService {
     let contractsLoaded = false;
     try {
       const network = await provider.getNetwork();
-      latestBlock = await provider.getBlockNumber();
+      latestBlock = await freshBlockNumber();
       chainId = Number(network.chainId);
       contractsReadOnly();
       contractsLoaded = true;

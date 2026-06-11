@@ -1,4 +1,13 @@
-import { Contract, Interface, JsonRpcProvider, Wallet, type ContractTransactionReceipt, type Log, type TransactionReceipt } from "ethers";
+import {
+  Contract,
+  Interface,
+  JsonRpcProvider,
+  NonceManager,
+  Wallet,
+  type ContractTransactionReceipt,
+  type Log,
+  type TransactionReceipt
+} from "ethers";
 import { config } from "./config.js";
 import { errors } from "./errors.js";
 
@@ -50,12 +59,30 @@ export const interfaces = {
 };
 
 export const provider = new JsonRpcProvider(config.rpcUrl, config.chainId);
+const managedSigners = new Map<string, NonceManager>();
+
+export async function freshBlockNumber() {
+  const blockNumber = (await provider.send("eth_blockNumber", [])) as string;
+  return Number.parseInt(blockNumber, 16);
+}
+
+function managedWallet(privateKey: string) {
+  const wallet = new Wallet(privateKey, provider);
+  const key = wallet.address.toLowerCase();
+  const cached = managedSigners.get(key);
+  if (cached) {
+    return cached;
+  }
+  const signer = new NonceManager(wallet);
+  managedSigners.set(key, signer);
+  return signer;
+}
 
 export function requireHotSigner() {
   if (!config.hotWalletPrivateKey) {
     throw errors.txBroadcast("缺少 HOT_WALLET_PRIVATE_KEY，不能广播链上交易");
   }
-  return new Wallet(config.hotWalletPrivateKey, provider);
+  return managedWallet(config.hotWalletPrivateKey);
 }
 
 export function getAdminSigner(approverAddress: string) {
@@ -63,7 +90,7 @@ export function getAdminSigner(approverAddress: string) {
   for (const privateKey of config.adminPrivateKeys) {
     const wallet = new Wallet(privateKey, provider);
     if (wallet.address.toLowerCase() === target) {
-      return wallet;
+      return managedWallet(privateKey);
     }
   }
   throw errors.forbidden();

@@ -1,6 +1,6 @@
 import { getAddress, id } from "ethers";
 import { config } from "../core/config.js";
-import { contractsReadOnly, erc20Abi, provider } from "../core/contracts.js";
+import { contractsReadOnly, erc20Abi, freshBlockNumber, provider } from "../core/contracts.js";
 import { prisma } from "../core/prisma.js";
 import { DepositRepository } from "../repositories/deposit.repository.js";
 import { LedgerRepository } from "../repositories/ledger.repository.js";
@@ -18,7 +18,7 @@ export class DepositService {
   ) {}
 
   async scan(input: { from_block?: number; to_block: number | "latest" }) {
-    const latest = await provider.getBlockNumber();
+    const latest = await freshBlockNumber();
     const state = await this.scanState.getOrCreate(config.chainId, config.requiredConfirmations);
     const fromBlock = input.from_block ?? state.lastScannedBlock + 1;
     const toBlock = input.to_block === "latest" ? latest : input.to_block;
@@ -104,7 +104,7 @@ export class DepositService {
   }
 
   async confirmPending() {
-    const latest = await provider.getBlockNumber();
+    const latest = await freshBlockNumber();
     const pending = await this.deposits.pendingDeposits();
     let confirmedCount = 0;
     let pendingCount = 0;

@@ -67,6 +67,37 @@ export type WithdrawalItem = {
   created_at: string;
 };
 
+export type MultisigApprovalTypedData = {
+  domain: {
+    name: string;
+    version: string;
+    chainId: number;
+    verifyingContract: string;
+  };
+  types: {
+    MultisigApproval: Array<{ name: string; type: string }>;
+  };
+  primaryType: "MultisigApproval";
+  message: {
+    withdrawal_id: string;
+    multisig_request_id: string;
+    approver: string;
+    token: string;
+    to: string;
+    amount: string;
+    deadline: string;
+    action: "APPROVE_WITHDRAWAL";
+  };
+};
+
+export type MultisigApprovalTypedDataResponse = {
+  withdrawal_id: string;
+  approver_address: string;
+  deadline: string;
+  expires_at: string;
+  typed_data: MultisigApprovalTypedData;
+};
+
 export type Dashboard = {
   hot_wallet: { address: string; balance: string };
   cold_wallet: { address: string; balance: string };

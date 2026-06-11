@@ -3,9 +3,11 @@ import { errors } from "../core/errors.js";
 import { MultisigRepository } from "../repositories/multisig.repository.js";
 import { WithdrawalRepository } from "../repositories/withdrawal.repository.js";
 import { normalizeAddress } from "../utils/address.js";
+import { buildMultisigApprovalTypedData, isApprovalExpired, recoverMultisigApprovalSigner } from "../utils/eip712.js";
 import { randomId } from "../utils/id.js";
 import { OnchainEventService } from "./onchain-event.service.js";
 import { WithdrawalService } from "./withdrawal.service.js";
+import { config } from "../core/config.js";
 
 export class MultisigService {
   constructor(
@@ -40,7 +42,24 @@ export class MultisigService {
     };
   }
 
-  async approve(withdrawalId: string, approverAddressInput: string) {
+  async approvalTypedData(withdrawalId: string, approverAddressInput: string) {
+    const approverAddress = normalizeAddress(approverAddressInput);
+    const withdrawal = await this.withdrawals.findById(withdrawalId);
+    if (!withdrawal || !withdrawal.multisigRequestId) {
+      throw errors.validation({ withdrawal_id: "withdrawal not pending multisig" });
+    }
+    const deadline = (Math.floor(Date.now() / 1000) + 600).toString();
+    const typedData = this.buildApprovalTypedData(withdrawal, approverAddress, deadline);
+    return {
+      withdrawal_id: withdrawal.id,
+      approver_address: approverAddress,
+      deadline,
+      expires_at: new Date(Number(deadline) * 1000).toISOString(),
+      typed_data: typedData
+    };
+  }
+
+  async approve(withdrawalId: string, approverAddressInput: string, signature?: string, deadline?: string) {
     const approverAddress = normalizeAddress(approverAddressInput);
     const withdrawal = await this.withdrawals.findById(withdrawalId);
     if (!withdrawal || !withdrawal.multisigRequestId) {
@@ -49,6 +68,19 @@ export class MultisigService {
     const existing = await this.approvals.findApproval(withdrawal.id, approverAddress);
     if (existing) {
       throw errors.multisigAlreadyApproved();
+    }
+    if (signature || deadline) {
+      if (!signature || !deadline) {
+        throw errors.invalidSignature({ signature: "signature and deadline must be provided together" });
+      }
+      if (isApprovalExpired(deadline)) {
+        throw errors.signatureExpired({ deadline });
+      }
+      const typedData = this.buildApprovalTypedData(withdrawal, approverAddress, deadline);
+      const recovered = recoverMultisigApprovalSigner(typedData, signature);
+      if (recovered.toLowerCase() !== approverAddress.toLowerCase()) {
+        throw errors.invalidSignature({ recovered, approver_address: approverAddress });
+      }
     }
 
     const signer = getAdminSigner(approverAddress);
@@ -73,7 +105,9 @@ export class MultisigService {
       multisig_request_id: withdrawal.multisigRequestId,
       approved_count: approvedCount,
       threshold,
-      can_execute: approvedCount >= threshold
+      can_execute: approvedCount >= threshold,
+      approval_tx_hash: receipt?.hash ?? tx.hash,
+      eip712_verified: Boolean(signature)
     };
   }
 
@@ -94,5 +128,26 @@ export class MultisigService {
       status: updated.status,
       tx_hash: updated.txHash
     };
+  }
+
+  private buildApprovalTypedData(
+    withdrawal: { id: string; multisigRequestId: string | null; toAddress: string; amount: string },
+    approverAddress: string,
+    deadline: string
+  ) {
+    if (!withdrawal.multisigRequestId) {
+      throw errors.validation({ withdrawal_id: "withdrawal not pending multisig" });
+    }
+    return buildMultisigApprovalTypedData({
+      chainId: config.chainId,
+      verifyingContract: config.multisigColdWalletAddress,
+      token: config.mockUsdtAddress,
+      withdrawalId: withdrawal.id,
+      multisigRequestId: withdrawal.multisigRequestId,
+      approverAddress,
+      toAddress: withdrawal.toAddress,
+      amount: withdrawal.amount,
+      deadline
+    });
   }
 }

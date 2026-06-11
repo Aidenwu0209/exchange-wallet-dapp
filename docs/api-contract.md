@@ -581,7 +581,65 @@ POST /api/v1/admin/sweep
 GET /api/v1/admin/pending-withdrawals?page=1&page_size=20
 ```
 
-### 14.4 审批大额提现
+### 14.4 生成 EIP-712 审批签名数据
+
+```text
+GET /api/v1/admin/withdrawals/{withdrawal_id}/approval-typed-data?approver_address=0x0000000000000000000000000000000000000004
+```
+
+响应中的 `typed_data` 是标准 EIP-712 JSON，前端应原样传给 MetaMask `eth_signTypedData_v4`。`deadline` 必须在提交审批时一起回传，后端会按同一份业务数据重建 typed data 并验签。
+
+响应：
+
+```json
+{
+  "success": true,
+  "data": {
+    "withdrawal_id": "wd_002",
+    "approver_address": "0x0000000000000000000000000000000000000004",
+    "deadline": "1781179000",
+    "expires_at": "2026-06-11T11:56:40.000Z",
+    "typed_data": {
+      "domain": {
+        "name": "ExchangeWalletMultisigApproval",
+        "version": "1",
+        "chainId": 31337,
+        "verifyingContract": "0x0000000000000000000000000000000000001000"
+      },
+      "types": {
+        "MultisigApproval": [
+          { "name": "withdrawal_id", "type": "string" },
+          { "name": "multisig_request_id", "type": "uint256" },
+          { "name": "approver", "type": "address" },
+          { "name": "token", "type": "address" },
+          { "name": "to", "type": "address" },
+          { "name": "amount", "type": "uint256" },
+          { "name": "deadline", "type": "uint256" },
+          { "name": "action", "type": "string" }
+        ]
+      },
+      "primaryType": "MultisigApproval",
+      "message": {
+        "withdrawal_id": "wd_002",
+        "multisig_request_id": "1",
+        "approver": "0x0000000000000000000000000000000000000004",
+        "token": "0x0000000000000000000000000000000000002000",
+        "to": "0x0000000000000000000000000000000000003000",
+        "amount": "1000000000000000000000",
+        "deadline": "1781179000",
+        "action": "APPROVE_WITHDRAWAL"
+      }
+    }
+  },
+  "error": null,
+  "meta": {
+    "request_id": "req_xxx",
+    "timestamp": "2026-06-11T00:00:00.000Z"
+  }
+}
+```
+
+### 14.5 审批大额提现
 
 ```text
 POST /api/v1/admin/withdrawals/{withdrawal_id}/approve
@@ -592,9 +650,12 @@ POST /api/v1/admin/withdrawals/{withdrawal_id}/approve
 ```json
 {
   "approver_address": "0x0000000000000000000000000000000000000004",
-  "signature": "0xsig..."
+  "signature": "0xsig...",
+  "deadline": "1781179000"
 }
 ```
+
+本地 CLI 自动化可以只传 `approver_address`，由后端使用 `.env` 中对应测试私钥广播审批；前端管理员页面必须使用上一步生成的 EIP-712 签名。
 
 响应：
 
@@ -606,7 +667,9 @@ POST /api/v1/admin/withdrawals/{withdrawal_id}/approve
     "multisig_request_id": "1",
     "approved_count": 2,
     "threshold": 2,
-    "can_execute": true
+    "can_execute": true,
+    "approval_tx_hash": "0xabc...",
+    "eip712_verified": true
   },
   "error": null,
   "meta": {
@@ -616,7 +679,7 @@ POST /api/v1/admin/withdrawals/{withdrawal_id}/approve
 }
 ```
 
-### 14.5 执行大额提现
+### 14.6 执行大额提现
 
 ```text
 POST /api/v1/admin/withdrawals/{withdrawal_id}/execute
@@ -640,7 +703,7 @@ POST /api/v1/admin/withdrawals/{withdrawal_id}/execute
 }
 ```
 
-### 14.6 新增黑名单地址
+### 14.7 新增黑名单地址
 
 ```text
 POST /api/v1/admin/blacklist
@@ -655,7 +718,7 @@ POST /api/v1/admin/blacklist
 }
 ```
 
-### 14.7 查询风控事件
+### 14.8 查询风控事件
 
 ```text
 GET /api/v1/admin/risk-events?page=1&page_size=20
@@ -829,6 +892,8 @@ GET /api/v1/admin/block-scan-state
 | `MULTISIG_APPROVAL_REQUIRED` | 需要多签审批 |
 | `MULTISIG_ALREADY_APPROVED` | 当前审批人已经审批 |
 | `MULTISIG_THRESHOLD_NOT_MET` | 多签阈值未达到 |
+| `INVALID_SIGNATURE` | EIP-712 审批签名无效 |
+| `SIGNATURE_EXPIRED` | EIP-712 审批签名已过期 |
 | `TX_BROADCAST_FAILED` | 链上交易广播失败 |
 | `CHAIN_CONNECTION_FAILED` | 区块链节点连接失败 |
 | `RECONCILIATION_FAILED` | 资产对账失败 |
@@ -852,4 +917,3 @@ GET /api/v1/admin/block-scan-state
 ```
 
 后续新增字段必须向后兼容。不得删除已有字段。需要破坏性调整时，应新增 `/api/v2`。
-
