@@ -18,6 +18,7 @@ build/
 .next/
 out/
 coverage/
+*.tsbuildinfo
 
 # Foundry
 contracts/cache/
