@@ -33,5 +33,6 @@ backend/data/
 *.sqlite-journal
 
 # Local reports and screenshots generated during QA
+logs/
 tmp/
 screenshots/

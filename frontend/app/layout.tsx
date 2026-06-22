@@ -4,7 +4,7 @@ import { Providers } from "@/src/components/layout/Providers";
 import { AppShell } from "@/src/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "选题二：交易所钱包系统 DApp 开发",
+  title: "交易所钱包系统 DApp",
   description: "Exchange wallet DApp with deposit scanning, risk control, multisig, reconciliation and Proof of Reserve"
 };
 
